@@ -1,0 +1,355 @@
+define(['class', 'emitter'], function(Class, Emitter)
+{
+	/**
+	 * Token
+	 */
+	var Token = Class({
+
+		init: function(type, value)
+		{
+			this.type = type;
+			this.value = value;
+		}
+	});
+
+	/**
+	 * Token Type
+	 */
+	var TokenType = Class({
+
+		/**
+		 *
+		 * @param validChars
+		 * @param startChars
+		 */
+		init: function(validChars, startChars)
+		{
+			this.valid(validChars);
+			this.start(startChars);
+		},
+
+		/**
+		 *
+		 * @param validChars
+		 */
+		valid: function(validChars)
+		{
+			var type = typeof validChars;
+			var isValid;
+
+			if(!validChars)
+			{
+				isValid = TokenType.fn.isValid;
+			}
+			else if(type == 'string')
+			{
+				isValid = function(char)
+				{
+					return (validChars.indexOf(char) > -1);
+				};
+			}
+			else if(type == 'object')
+			{
+				var fn = (validChars instanceof RegExp ? 'test' : 'hasOwnProperty');
+				isValid = function(char)
+				{
+					return validChars[fn](char);
+				};
+			}
+
+			this.isValid = isValid;
+		},
+
+		/**
+		 *
+		 * @param char
+		 * @returns {boolean}
+		 */
+		isValid: function(char)
+		{
+			return false;
+		},
+
+		/**
+		 *
+		 * @param startChars
+		 */
+		start: function(startChars)
+		{
+			this.startChars = startChars ? String(startChars) : '';
+		},
+
+		/**
+		 *
+		 * @param char
+		 * @param index
+		 * @returns {boolean}
+		 */
+		isIndexValid: function(char, index)
+		{
+			index |= 0;
+
+			if(index < this.startChars.length)
+				return (this.startChars.charAt(index) == char);
+
+			return this.isValid(char);
+		}
+	});
+
+	/**
+	 * Token Context
+	 */
+	var TokenContext = Class({
+
+		/**
+		 *
+		 */
+		init: function(tokens)
+		{
+			this.tokens = tokens || [];
+		},
+
+		/**
+		 *
+		 * @param token
+		 */
+		add: function(token)
+		{
+			if(token instanceof TokenType)
+				this.tokens.push(token);
+		},
+
+		/**
+		 *
+		 */
+		reset: function()
+		{
+			var tokens = this.tokens;
+			var valid = [];
+
+			for(var i = 0; i < tokens.length; i++)
+				valid.push(tokens[i]);
+
+			this.valid = valid;
+			this.index = 0;
+		},
+
+		/**
+		 *
+		 * @param char
+		 */
+		feed: function(char)
+		{
+			var tokens = this.valid;
+			var valid = [];
+
+			for(var i = 0; i < tokens.length; i++)
+			{
+				var token = tokens[i];
+
+				if(token.isIndexValid(char, this.index))
+					valid.push(token);
+			}
+
+			this.valid = valid;
+			this.index++;
+		},
+
+		/**
+		 *
+		 * @param char
+		 * @returns {Boolean}
+		 */
+		check: function(char)
+		{
+			var tokens = this.valid;
+
+			for(var i = 0; i < tokens.length; i++)
+			{
+				var token = tokens[i];
+
+				if(token.isIndexValid(char, this.index))
+					return true;
+			}
+
+			return false;
+		},
+
+		/**
+		 *
+		 * @returns {Array}
+		 */
+		validTokens: function()
+		{
+			return (this.valid || this.tokens);
+		}
+	});
+
+	/**
+	 * Parser
+	 */
+	var Parser = Emitter.extend({
+
+		endChar: String.fromCharCode(0),
+
+		/**
+		 *
+		 */
+		init: function(context)
+		{
+			this.contextStack = [];
+
+			this.pushContext(context);
+		},
+
+		/**
+		 *
+		 * @returns {TokenContext}
+		 */
+		context: function()
+		{
+			return this.contextStack[this.contextStack.length - 1];
+		},
+
+		/**
+		 *
+		 * @param context
+		 */
+		pushContext: function(context)
+		{
+			if(context instanceof TokenContext)
+				this.contextStack.push(context);
+		},
+
+		/**
+		 *
+		 * @returns {TokenContext}
+		 */
+		popContext: function()
+		{
+			return this.contextStack.pop();
+		},
+
+		/**
+		 *
+		 * @param context
+		 */
+		swapContext: function(context)
+		{
+			this.popContext();
+			this.pushContext(context);
+		},
+
+		parse: function(input)
+		{
+			input += this.endChar;
+
+			var context = this.context();
+			context.reset();
+
+			var part = [];
+			var token = false;
+
+			var count = 0;
+
+			for(var i = 0; i < input.length; i++)
+			{
+				var char = input.charAt(i);
+
+				if(count++ > 1000) break;
+
+				if(context.check(char))
+				{
+					if(!token)
+					{
+						context.feed(char);
+
+						var tokens = context.validTokens();
+
+						if(tokens.length == 1)
+							token = new Token(tokens[0]);
+					}
+
+					part.push(char);
+				}
+				else if(part.length)
+				{
+					if(!token)
+					{
+						var tokens = context.validTokens();
+
+						if(!tokens.length)
+						{
+							throw new Error('Blah');
+						}
+
+						var tokenType = tokens[0];
+						var maxLen = 0;
+
+						for(var j = 0; j < tokens.length; j++)
+						{
+							var len = tokens[j].startChars.length;
+							if(len > maxLen)
+							{
+								tokenType = tokens[j];
+								maxLen = len;
+							}
+						}
+
+						token = new Token(tokenType);
+					}
+
+					token.value = part.join('');
+
+					this.trigger('token', {
+						context: context,
+						char: char,
+						type: token.type,
+						token: token,
+						index: i
+					});
+
+					context = this.context();
+					context.reset();
+
+					part = [];
+					token = false;
+
+					if(char != this.endChar)
+						i--;
+				}
+				else
+				{
+					this.report(input, i);
+				}
+			}
+		},
+
+		report: function(input, index)
+		{
+			var firstHalf = input.substr(0, index);
+			var secondHalf = input.substr(index);
+
+			var firstLines = firstHalf.split(/[\n\r]/);
+			var secondLines = secondHalf.split(/[\n\r]/);
+
+			var lastFirstLine = firstLines[firstLines.length - 1];
+			var firstSecondLine = secondLines[0];
+
+			var arrow = [];
+			for(var i = 0; i < lastFirstLine.length; i++) arrow.push('-');
+			arrow.push('^');
+
+			throw new Error([
+				'Parsing error, unexpected character at line ' + firstLines.length + ' character ' + (lastFirstLine.length + 1),
+				lastFirstLine + firstSecondLine,
+				arrow.join('')
+			].join('\n'));
+		}
+	});
+
+	Parser.TokenType = TokenType;
+	Parser.TokenContext = TokenContext;
+
+	return Parser;
+});
