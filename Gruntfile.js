@@ -9,7 +9,7 @@ module.exports = function(grunt)
 			compile: {
 				options: {
 					// namespace: 'hydro',
-					baseUrl: 'src/core/',
+					baseUrl: 'src/',
 					keepBuildDir: true,
 					name: 'libs/almond',
 					include: ['main'],
@@ -18,8 +18,8 @@ module.exports = function(grunt)
 					preserveLicenseComments: false,
 					optimize: 'none',
 					wrap: {
-						startFile: 'src/core/start.frag',
-						endFile: 'src/core/end.frag'
+						startFile: 'src/start.frag',
+						endFile: 'src/end.frag'
 					}
 				}
 			}
