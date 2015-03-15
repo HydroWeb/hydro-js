@@ -1,6 +1,6 @@
 {
-  "name": "hydrojs",
-  "version": "0.0.1",
+  "name": "Hydro",
+  "version": "1.0.0",
   "devDependencies": {
     "grunt": "~0.4.2",
     "grunt-contrib-requirejs": "~0.4.4",
