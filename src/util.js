@@ -6,7 +6,7 @@ define(function(require)
 		prefixClass:    require('util/prefixClass'),
 		support:        require('util/support'),
 		frame:          require('util/frame'),
-		unitNumber:     require('util/unitNumber'),
-		parser:         require('util/parser')
+		unitNumber:     require('util/unitNumber')
+		//parser:         require('util/parser')
 	};
 });
