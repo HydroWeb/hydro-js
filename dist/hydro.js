@@ -2006,6 +2006,7 @@ define('dom/toggler',['settings', 'dom/element', 'dom/animator', 'util/prefixCla
 		setDisplayToggle: function(display)
 		{
 			this.display = !!display;
+			setDisplay(this.$element, true);
 		},
 
 		/**

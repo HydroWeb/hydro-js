@@ -120,6 +120,7 @@ define(['settings', 'dom/element', 'dom/animator', 'util/prefixClass', 'util/cam
 		setDisplayToggle: function(display)
 		{
 			this.display = !!display;
+			setDisplay(this.$element, true);
 		},
 
 		/**
