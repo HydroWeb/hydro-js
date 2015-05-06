@@ -2,6 +2,7 @@
 
 require(['settings', 'dom/ready', 'dom/element', 'util/prefixClass', 'dom', 'util'], function(Settings, ready, $, prefixClass)
 {
+	/*
 	// Set the document state to ready upon DOM ready
 	if(Settings.injectClasses)
 	{
@@ -12,4 +13,5 @@ require(['settings', 'dom/ready', 'dom/element', 'util/prefixClass', 'dom', 'uti
 				.addClass(prefixClass('state', 'ready'));
 		});
 	}
+	*/
 });

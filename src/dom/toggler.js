@@ -258,6 +258,15 @@ define(['settings', 'dom/element', 'dom/animator', 'util/prefixClass', 'util/cam
 			}
 		},
 
+		/**
+		 *
+		 * @returns {Boolean}
+		 */
+		isOpen: function()
+		{
+			return this._open;
+		}
+
 		/* TODO
 		sync: function(toggler)
 		{
